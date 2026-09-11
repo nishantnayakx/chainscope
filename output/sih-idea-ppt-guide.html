@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIH 2026 Idea PPT — Fill Guide — PS 26146</title>
+<style>
+  :root{
+    --ink:#0F1A2E;
+    --ink-soft:#1C2C47;
+    --paper:#FFFFFF;
+    --paper-dim:#F3F5F8;
+    --text:#1E2430;
+    --text-dim:#5B6472;
+    --line:#DEE3EA;
+    --accent:#0E7490;
+    --accent-soft:#E4F3F6;
+    --flag:#B4390A;
+    --flag-soft:#FBEAE3;
+    --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --mono: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
+    --sans: -apple-system, 'Segoe UI', Inter, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper-dim); color:var(--text);
+    font-family:var(--sans); line-height:1.55;
+  }
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    background:var(--ink); color:#EDF1F7;
+    padding:14px 24px; display:flex; align-items:center; justify-content:space-between;
+    gap:16px; flex-wrap:wrap;
+  }
+  .topbar .id{
+    font-family:var(--mono); font-size:12.5px; color:#9FB4CC; letter-spacing:.02em;
+  }
+  .topbar h1{ font-family:var(--serif); font-size:17px; font-weight:600; margin:0; color:#fff;}
+  .topbar button{
+    font-family:var(--sans); font-size:13px; font-weight:600; color:var(--ink);
+    background:#EDF1F7; border:none; padding:8px 16px; border-radius:3px; cursor:pointer;
+  }
+  .topbar button:hover{ background:#fff; }
+
+  .shell{ max-width:920px; margin:0 auto; padding:0 24px 90px; }
+
+  .rule-panel{
+    background:var(--ink-soft); color:#DCE6F2; margin-top:22px; padding:18px 22px;
+    border-radius:4px; font-size:13.5px;
+  }
+  .rule-panel strong{ color:#fff; }
+  .rule-panel ul{ margin:8px 0 0; padding-left:20px; }
+  .rule-panel li{ margin:3px 0; }
+
+  .slide{
+    background:var(--paper); margin-top:28px; border:1px solid var(--line); border-radius:5px;
+    overflow:hidden;
+  }
+  .slide-head{
+    display:flex; align-items:baseline; gap:14px; padding:22px 28px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .slide-num{
+    font-family:var(--mono); font-size:13px; color:var(--accent); font-weight:600;
+    border:1px solid var(--accent); border-radius:20px; padding:2px 11px; flex-shrink:0;
+  }
+  .slide-head h2{
+    font-family:var(--serif); font-size:22px; margin:0; color:var(--ink); font-weight:600;
+  }
+  .slide-body{ padding:20px 28px 26px; }
+
+  .field{ margin-bottom:20px; }
+  .field:last-child{ margin-bottom:0; }
+  .field label{
+    display:block; font-size:12px; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--text-dim); margin-bottom:6px; font-weight:600;
+  }
+  .fillbox{
+    border:1.5px dashed #B9C3D0; border-radius:4px; padding:10px 14px;
+    font-family:var(--mono); font-size:13px; color:#9199A6; background:var(--paper-dim);
+  }
+  .content{
+    border-left:3px solid var(--accent); padding:2px 0 2px 16px; font-size:14.5px;
+  }
+  .content p{ margin:0 0 10px; }
+  .content ul{ margin:0 0 10px; padding-left:20px; }
+  .content li{ margin:4px 0; }
+  .content ul ul{ margin-top:4px; }
+
+  .tag{
+    display:inline-block; font-family:var(--mono); font-size:11px; font-weight:600;
+    letter-spacing:.03em; padding:2px 8px; border-radius:3px; margin-bottom:10px;
+  }
+  .tag.official{ background:var(--accent-soft); color:var(--accent); }
+  .tag.flag{ background:var(--flag-soft); color:var(--flag); }
+
+  .name-options{ display:grid; gap:8px; margin:6px 0 14px; }
+  .name-opt{
+    display:flex; align-items:baseline; gap:10px; padding:9px 14px;
+    background:var(--paper-dim); border-radius:4px; font-size:14px;
+  }
+  .name-opt .n{ font-family:var(--mono); color:var(--accent); font-size:12px; flex-shrink:0; }
+
+  .diagram{
+    font-family:var(--mono); font-size:12.5px; color:var(--ink); background:var(--paper-dim);
+    border:1px solid var(--line); border-radius:4px; padding:16px 18px; line-height:1.9;
+    white-space:pre-wrap; overflow-x:auto;
+  }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:640px){ .grid2{ grid-template-columns:1fr; } }
+
+  .risk-row{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:10px 0;
+    border-bottom:1px solid var(--line); font-size:13.5px;
+  }
+  .risk-row:last-child{ border-bottom:none; }
+  .risk-row .risk{ color:var(--flag); }
+  .risk-row .mit{ color:var(--text); }
+  .risk-head{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px; font-size:11px;
+    text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); font-weight:600;
+    padding-bottom:8px; border-bottom:2px solid var(--ink);
+  }
+
+  .refs a{ color:var(--accent); text-decoration:none; }
+  .refs a:hover{ text-decoration:underline; }
+  .refs li{ margin-bottom:8px; }
+
+  .footer-note{
+    margin-top:26px; text-align:center; font-size:12px; color:var(--text-dim);
+  }
+
+  @media print{
+    .topbar{ display:none; }
+    .shell{ max-width:100%; padding:0 8px; }
+    .slide{ break-inside:avoid; margin-top:16px; }
+    body{ background:#fff; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div>
+      <h1>SIH 2026 — Idea PPT Fill Guide</h1>
+      <div class="id">PS 26146 · Bitcoin Transaction Intelligence · NTRO · Blockchain &amp; Cybersecurity</div>
+    </div>
+    <button onclick="window.print()">Print / Save as PDF</button>
+  </div>
+
+  <div class="shell">
+
+    <div class="rule-panel">
+      <strong>How to use this guide</strong>
+      <ul>
+        <li>This mirrors the official 6-slide SIH IDEA template exactly — same slide order, same headings.</li>
+        <li>Everything under <em>dashed boxes</em> is a blank you must fill (team name, ID, chosen names). Everything under the teal bar is drafted content — copy it straight into the official template, then trim to fit.</li>
+        <li>Official constraint: max 6 slides including title, points/diagrams only (no paragraphs on the actual slide), template layout cannot be changed, final upload must be PDF.</li>
+      </ul>
+    </div>
+
+    <!-- SLIDE 1 -->
+    <div class="slide">
+      <div class="slide-head">
+        <span class="slide-num">01</span>
+        <h2>Title Page</h2>
+      </div>
+      <div class="slide-body">
+        <div class="field">
+          <label>Problem Statement ID</label>
+          <div class="content"><p>26146</p></div>
+        </div>
+        <div class="field">
+          <label>Problem Statement Title</label>
+          <div class="content"><p>AI-Powered Monitoring &amp; Analysis of Bitcoin Transaction Traffic</p></div>
+        </div>
+        <div class="field">
+          <label>Theme</label>
+          <div class="content"><p>Blockchain &amp; Cybersecurity</p></div>
+        </div>
+        <div class="field">
+          <label>PS Category</label>
+          <div class="content"><p>Software</p></div>
+        </div>
+        <div class="field">
+          <label>Team ID</label>
+          <div class="fillbox">— fill after SIH portal registration —</div>
+        </div>
+        <div class="field">
+          <label>Team Name (as registered on portal)</label>
+          <div class="fillbox">— fill after SIH portal registration —</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2 -->
+    <div class="slide">
+      <div class="slide-head">
+        <span class="slide-num">02</span>
+        <h2>Idea Title</h2>
+      </div>
+      <div class="slide-body">
+        <div class="field">
+          <label>Project name — pick one</label>
+          <div class="name-options">
+            <div class="name-opt"><span class="n">01</span> ChainScope</div>
+            <div class="name-opt"><span class="n">02</span> LedgerSentinel</div>
+            <div class="name-opt"><span class="n">03</span> VeriChain Intelligence</div>
+            <div class="name-opt"><span class="n">04</span> TraceChain AI</div>
+            <div class="name-opt"><span class="n">05</span> DarkLedger Analytics</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Proposed solution — detailed explanation</label>
+          <div class="content">
+            <p>An offline, AI-driven Bitcoin transaction intelligence platform that ingests bulk blockchain metadata (TXID, wallet addresses, amounts) alongside network-layer metadata (source/destination IP, port, timing) and fuses both layers into a single investigative graph. Unsupervised anomaly detection (Isolation Forest) and entity clustering (HDBSCAN) run on engineered behavioral and graph features to surface a ranked list of potentially suspicious wallets and transactions — each alert backed by a transparent, decomposable risk score and a plain-language explanation, not a black-box output.</p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>How it addresses the problem</label>
+          <div class="content">
+            <ul>
+              <li>Bitcoin's pseudonymity is broken down by correlating on-chain wallet behavior with off-chain IP/timing observations — the core NTRO ask.</li>
+              <li>Replaces manual, rule-based triage with a working trained ML model, satisfying the PS's explicit "not just rules" requirement.</li>
+              <li>Delivers investigation-ready output (ranked alerts, evidence, confidence scores) instead of raw scores an analyst has to reinterpret.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Innovation and uniqueness</label>
+          <div class="content">
+            <ul>
+              <li>Dual-layer correlation (blockchain + network) rather than chain-analysis alone, which is what most commercial tools offer.</li>
+              <li>Every alert is explainable by design — top contributing features, graph evidence, and cluster context are shown together, not just a score.</li>
+              <li>Fully offline, self-contained architecture — no cloud dependency, deployable in air-gapped investigative environments.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 -->
+    <div class="slide">
+      <div class="slide-head">
+        <span class="slide-num">03</span>
+        <h2>Technical Approach</h2>
+      </div>
+      <div class="slide-body">
+        <div class="field">
+          <label>Technologies to be used</label>
+          <div class="grid2">
+            <div class="content">
+              <p><strong style="color:var(--ink)">Backend &amp; ML</strong></p>
+              <ul>
+                <li>Python, FastAPI</li>
+                <li>scikit-learn (Isolation Forest)</li>
+                <li>HDBSCAN (clustering)</li>
+                <li>SHAP (explainability)</li>
+                <li>NetworkX (graph engine)</li>
+                <li>PostgreSQL</li>
+              </ul>
+            </div>
+            <div class="content">
+              <p><strong style="color:var(--ink)">Frontend &amp; Data</strong></p>
+              <ul>
+                <li>React + TypeScript + Tailwind</li>
+                <li>Cytoscape.js (graph visualization)</li>
+                <li>D3.js (charts)</li>
+                <li>Leaflet (offline geo view)</li>
+                <li>MaxMind GeoLite2 (offline GeoIP)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Methodology / process flow</label>
+          <div class="diagram">Raw Dataset (CSV / JSON / XML)
+        │
+        ▼
+Ingestion &amp; Validation  →  malformed rows rejected, logged
+        │
+        ▼
+Normalization  →  timestamps, address formats, dedup
+        │
+        ▼
+GeoIP Enrichment  →  IP → country / ASN (offline DB)
+        │
+        ▼
+Entity Resolution  →  wallet / IP / transaction nodes
+        │
+        ▼
+Feature Engineering  →  behavioral + graph features
+        │
+        ▼
+Graph Construction (NetworkX)
+        │
+        ▼
+AI/ML Anomaly Detection (Isolation Forest)
+        │
+        ▼
+Entity Clustering (HDBSCAN)
+        │
+        ▼
+Risk Scoring  →  transparent, weighted combination
+        │
+        ▼
+Explainability (SHAP / feature attribution)
+        │
+        ▼
+Investigation Dashboard  →  ranked alerts + graph + evidence</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 -->
+    <div class="slide">
+      <div class="slide-head">
+        <span class="slide-num">04</span>
+        <h2>Feasibility and Viability</h2>
+      </div>
+      <div class="slide-body">
+        <div class="field">
+          <label>Feasibility analysis</label>
+          <div class="content">
+            <ul>
+              <li>Organizers provide a synthetic dataset modeled on real Bitcoin P2P/transaction fields — no dependency on live or seized data to build and validate the prototype.</li>
+              <li>Every chosen algorithm (Isolation Forest, HDBSCAN, SHAP) is mature, well-documented, and runs fully offline on standard hardware — no GPU or cloud dependency.</li>
+              <li>Architecture is modular: ingestion, graph, ML, and dashboard can be built and tested independently before integration.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Potential challenges, risks &amp; mitigation</label>
+          <div class="risk-head"><span>Risk</span><span>Mitigation</span></div>
+          <div class="risk-row">
+            <span class="risk">No ground-truth labels in the synthetic dataset</span>
+            <span class="mit">Inject scripted criminal-pattern scenarios (layering, mixer-like fan-in/out) as pseudo ground-truth for evaluation</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk">Risk-score weights could look arbitrary to judges</span>
+            <span class="mit">Document weighting rationale explicitly and calibrate against injected scenarios rather than presenting fixed numbers as final</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk">Graph can become large/cluttered</span>
+            <span class="mit">Subgraph filtering by risk threshold; render only the neighborhood around a selected alert</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk">Team unfamiliar with graph/ML tooling</span>
+            <span class="mit">Clear phase-wise task division with defined Definition-of-Done per phase (see technical roadmap)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5 -->
+    <div class="slide">
+      <div class="slide-head">
+        <span class="slide-num">05</span>
+        <h2>Impact and Benefits</h2>
+      </div>
+      <div class="slide-body">
+        <div class="field">
+          <label>Potential impact on target audience</label>
+          <div class="content">
+            <ul>
+              <li>National Technical Research Organisation and allied cybercrime investigation units get a shortlist of high-priority entities instead of manually reviewing raw blockchain dumps.</li>
+              <li>Reduces time-to-lead for investigators tracing ransomware, darknet-market, and extortion payment flows.</li>
+              <li>Gives non-blockchain-expert analysts an accessible, explainable entry point into complex chain analysis.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Benefits of the solution</label>
+          <div class="content">
+            <ul>
+              <li><strong style="color:var(--ink)">Security:</strong> strengthens India's cyber-financial crime investigation capability against ransomware, laundering, and extortion.</li>
+              <li><strong style="color:var(--ink)">Operational:</strong> cuts manual investigative effort by pre-ranking entities by risk, with evidence attached.</li>
+              <li><strong style="color:var(--ink)">Sovereign capability:</strong> fully offline, indigenously built — no dependency on foreign commercial blockchain-analytics vendors for sensitive investigations.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6 -->
+    <div class="slide">
+      <div class="slide-head">
+        <span class="slide-num">06</span>
+        <h2>Research and References</h2>
+      </div>
+      <div class="slide-body">
+        <div class="field">
+          <label>Reference &amp; research material</label>
+          <ul class="content refs">
+            <li>Liu, F. T., Ting, K. M., &amp; Zhou, Z.-H. — <em>Isolation Forest</em>, IEEE ICDM 2008 — core anomaly detection method used.</li>
+            <li>Campello, Moulavi &amp; Sander — <em>HDBSCAN: Hierarchical Density-Based Clustering</em> — entity clustering method used.</li>
+            <li>Lundberg &amp; Lee — <em>A Unified Approach to Interpreting Model Predictions (SHAP)</em>, NeurIPS 2017 — explainability method used.</li>
+            <li>MITRE ATT&amp;CK Framework — <a href="https://attack.mitre.org" target="_blank">attack.mitre.org</a> — reference model for structuring investigative alert categories.</li>
+            <li>MaxMind GeoLite2 — <a href="https://dev.maxmind.com/geoip/geolite2-free-geolocation-data" target="_blank">dev.maxmind.com</a> — offline IP-to-geography enrichment.</li>
+            <li>NTRO PS 26146 dataset link (synthetic Bitcoin transaction/network metadata) — provided via official SIH problem statement portal.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">SIH 2026 · PS 26146 · Drafted content — verify every figure and claim before final submission · Export official PPT as PDF only.</div>
+
+  </div>
+
+</body>
+</html>

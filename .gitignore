@@ -1,0 +1,27 @@
+# Logs & Lock files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Node modules & build outputs
+node_modules/
+dist/
+build/
+.vite/
+
+# Python cache & synthetic test outputs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+sample_test.json
+sample_test_ground_truth.json
+sample_dataset.json
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

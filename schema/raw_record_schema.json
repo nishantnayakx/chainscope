@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PS26146RawTransactionRecord",
+  "type": "object",
+  "required": [
+    "timestamp", "src_ip", "dst_ip", "src_port", "dst_port",
+    "txid", "input_addresses", "output_addresses",
+    "input_amounts", "output_amounts", "fee"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": ["string", "number"],
+      "description": "ISO 8601 string or unix epoch"
+    },
+    "src_ip": { "type": "string" },
+    "dst_ip": { "type": "string" },
+    "src_port": { "type": "integer", "minimum": 0, "maximum": 65535 },
+    "dst_port": { "type": "integer", "minimum": 0, "maximum": 65535 },
+    "txid": { "type": "string", "minLength": 1 },
+    "input_addresses": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "output_addresses": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "input_amounts": {
+      "type": "array",
+      "items": { "type": "number", "minimum": 0 }
+    },
+    "output_amounts": {
+      "type": "array",
+      "items": { "type": "number", "minimum": 0 }
+    },
+    "fee": { "type": "number", "minimum": 0 },
+    "script_type": { "type": ["string", "null"] },
+    "geo_country": { "type": ["string", "null"] },
+    "asn": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}
