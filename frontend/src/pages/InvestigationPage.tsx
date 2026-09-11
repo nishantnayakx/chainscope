@@ -2,20 +2,62 @@ import { useEffect, useState } from 'react';
 import GraphView from '../components/GraphView';
 import RiskBadge from '../components/RiskBadge';
 import WorkflowStepper from '../components/WorkflowStepper';
-import { fetchInvestigation } from '../api/client';
-import type { Investigation } from '../types';
+import {
+  fetchAlertDetail,
+  fetchAlertEvidence,
+  fetchAlertGraph,
+  fetchAlertPropagation,
+  fetchWalletRisk,
+} from '../api/client';
+import type { AlertSummary, AlertEvidence, AlertPropagation, GraphData, WalletRisk } from '../types';
+
+const COMPONENT_LABELS: Record<string, string> = {
+  anomaly: 'Anomaly score',
+  peeling: 'Peeling chain',
+  coinjoin: 'Coinjoin-like',
+  cluster: 'Cluster association',
+  network: 'Network correlation',
+  propagated: 'Risk propagation',
+};
 
 export default function InvestigationPage({ alertId }: { alertId: string }) {
-  const [inv, setInv] = useState<Investigation | null>(null);
+  const [alert, setAlert] = useState<AlertSummary | null>(null);
+  const [evidence, setEvidence] = useState<AlertEvidence | null>(null);
+  const [graph, setGraph] = useState<GraphData | null>(null);
+  const [propagation, setPropagation] = useState<AlertPropagation | null>(null);
+  const [walletRisk, setWalletRisk] = useState<WalletRisk | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setInv(null);
+    setAlert(null);
+    setEvidence(null);
+    setGraph(null);
+    setPropagation(null);
+    setWalletRisk(null);
     setError(null);
-    fetchInvestigation(alertId)
-      .then((i) => !cancelled && setInv(i))
-      .catch(() => !cancelled && setError('Could not load this case file from the backend.'));
+
+    async function load() {
+      try {
+        const alertDetail = await fetchAlertDetail(alertId);
+        if (cancelled) return;
+        setAlert(alertDetail);
+
+        // Independent calls — fire together, each renders as it resolves
+        // rather than blocking the whole page on the slowest one.
+        fetchAlertEvidence(alertId).then((e) => !cancelled && setEvidence(e)).catch(() => {});
+        fetchAlertGraph(alertId).then((g) => !cancelled && setGraph(g)).catch(() => {});
+        fetchAlertPropagation(alertId).then((p) => !cancelled && setPropagation(p)).catch(() => {});
+        if (alertDetail.entity_type === 'wallet') {
+          fetchWalletRisk(alertDetail.entity_id)
+            .then((w) => !cancelled && setWalletRisk(w))
+            .catch(() => {});
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e.message);
+      }
+    }
+    load();
     return () => {
       cancelled = true;
     };
@@ -31,7 +73,7 @@ export default function InvestigationPage({ alertId }: { alertId: string }) {
     );
   }
 
-  if (!inv) {
+  if (!alert) {
     return <div className="px-10 py-10 text-sm text-slate-400">Opening case file…</div>;
   }
 
@@ -39,15 +81,24 @@ export default function InvestigationPage({ alertId }: { alertId: string }) {
     <div className="mx-auto max-w-6xl px-10 py-10">
       <div className="flex items-start justify-between">
         <div>
-          <div className="font-mono text-xs text-slate-400">{inv.alert.id}</div>
-          <h1 className="mt-1 font-mono text-lg font-semibold text-ink">{inv.alert.entity}</h1>
+          <div className="font-mono text-xs text-slate-400">{alert.alert_id}</div>
+          <h1 className="mt-1 font-mono text-lg font-semibold text-ink">{alert.entity_id}</h1>
         </div>
         <WorkflowStepper active={['Connect', 'Analyse', 'Detect', 'Explain']} />
       </div>
 
       <div className="mt-6 flex items-center gap-4">
-        <RiskBadge level={inv.alert.riskLevel} score={inv.alert.riskScore} />
-        <span className="text-sm text-slate-600">{inv.alert.detectionReason}</span>
+        <RiskBadge level={alert.risk_level} score={alert.risk_score} />
+        <div className="flex gap-1.5">
+          {alert.pattern_types.map((p) => (
+            <span key={p} className="rounded-sm bg-paper px-2 py-1 text-[11px] text-slate-500">
+              {p.replace('_', ' ')}
+            </span>
+          ))}
+        </div>
+        <span className="text-sm text-slate-500">
+          confidence <span className="font-mono text-ink">{Math.round(alert.confidence * 100)}%</span>
+        </span>
       </div>
 
       <div className="mt-8 grid grid-cols-5 gap-8">
@@ -57,81 +108,88 @@ export default function InvestigationPage({ alertId }: { alertId: string }) {
             Connected Entities
           </div>
           <div className="h-96">
-            <GraphView data={inv.graph} focusId={inv.alert.entity} />
+            {graph ? (
+              <GraphView data={graph} focusId={alert.entity_id} />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                Loading graph…
+              </div>
+            )}
           </div>
         </div>
 
         {/* Evidence panel */}
         <div className="col-span-2 space-y-6">
+          {/* Risk component breakdown — only for wallet entities */}
+          {walletRisk && (
+            <div className="rounded-sm border border-paper-line bg-white p-5">
+              <div className="text-[12.5px] font-medium text-slate-500">Risk Breakdown</div>
+              <div className="mt-3 space-y-2">
+                {Object.entries(walletRisk.components).map(([key, value]) => (
+                  <div key={key} className="flex items-center gap-3">
+                    <span className="w-36 flex-shrink-0 text-[11.5px] text-slate-600">
+                      {COMPONENT_LABELS[key] ?? key}
+                    </span>
+                    <div className="h-1.5 flex-1 rounded-sm bg-paper">
+                      <div className="h-1.5 rounded-sm bg-stamp" style={{ width: `${value * 100}%` }} />
+                    </div>
+                    <span className="w-10 text-right font-mono text-[11px] text-slate-400">
+                      {Math.round(value * 100)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Evidence list */}
           <div className="rounded-sm border border-paper-line bg-white p-5">
             <div className="text-[12.5px] font-medium text-slate-500">Why this was flagged</div>
-            <div className="mt-3 space-y-2">
-              {inv.evidence.topFeatures.map((f) => (
-                <div key={f.name} className="flex items-center gap-3">
-                  <span className="w-40 flex-shrink-0 truncate font-mono text-[11.5px] text-slate-600">
-                    {f.name}
-                  </span>
-                  <div className="h-1.5 flex-1 rounded-sm bg-paper">
-                    <div
-                      className="h-1.5 rounded-sm bg-stamp"
-                      style={{ width: `${f.contribution * 100}%` }}
-                    />
+            {evidence ? (
+              <div className="mt-3 space-y-4">
+                {evidence.evidence.map((item, i) => (
+                  <div key={i} className="border-l-2 border-stamp-soft pl-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] font-medium text-ink">
+                        {item.evidence_type.replace(/_/g, ' ')}
+                      </span>
+                      <span className="font-mono text-[10.5px] text-slate-400">
+                        weight {Math.round(item.weight * 100)}%
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[12px] leading-relaxed text-slate-600">{item.description}</p>
                   </div>
-                  <span className="w-10 text-right font-mono text-[11px] text-slate-400">
-                    {Math.round(f.contribution * 100)}%
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 border-t border-paper-line pt-3 text-[12.5px] text-slate-500">
-              Model confidence:{' '}
-              <span className="font-mono font-medium text-ink">{Math.round(inv.evidence.confidence * 100)}%</span>
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-slate-400">Loading evidence…</p>
+            )}
           </div>
 
-          <div className="rounded-sm border border-paper-line bg-white p-5">
-            <div className="text-[12.5px] font-medium text-slate-500">Supporting evidence</div>
-            <dl className="mt-3 space-y-3 text-[12.5px]">
-              <div>
-                <dt className="text-slate-400">Related transactions</dt>
-                <dd className="mt-1 space-y-0.5 font-mono text-[11.5px] text-ink">
-                  {inv.evidence.relatedTransactions.map((t) => (
-                    <div key={t} className="truncate">{t}</div>
-                  ))}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-400">Associated IPs</dt>
-                <dd className="mt-1 font-mono text-[11.5px] text-ink">{inv.evidence.relatedIps.join(', ')}</dd>
-              </div>
-              {inv.evidence.clusterId && (
-                <div>
-                  <dt className="text-slate-400">Cluster</dt>
-                  <dd className="mt-1 font-mono text-[11.5px] text-ink">{inv.evidence.clusterId}</dd>
+          {/* Propagation path */}
+          {propagation && propagation.propagation_path.hops.length > 0 && (
+            <div className="rounded-sm border border-paper-line bg-white p-5">
+              <div className="text-[12.5px] font-medium text-slate-500">Risk Propagation Path</div>
+              <div className="mt-3 space-y-2">
+                <div className="font-mono text-[11.5px] text-slate-500">
+                  seed: {propagation.propagation_path.seed_wallet} (score{' '}
+                  {propagation.propagation_path.seed_score})
                 </div>
-              )}
-            </dl>
-          </div>
+                {propagation.propagation_path.hops.map((h) => (
+                  <div key={h.hop} className="flex items-center gap-3 font-mono text-[11.5px]">
+                    <span className="text-slate-400">hop {h.hop}</span>
+                    <span className="truncate text-ink">{h.wallet}</span>
+                    <span className="ml-auto text-slate-400">{h.score.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="rounded-sm border border-risk-mediumSoft bg-risk-mediumSoft px-4 py-3 text-[12px] leading-relaxed text-risk-medium">
             This entity shows patterns that warrant investigation — this is a prioritization
             signal, not confirmation of wrongdoing.
           </div>
-        </div>
-      </div>
-
-      <div className="mt-10">
-        <div className="text-[12.5px] font-medium text-slate-500">Timeline</div>
-        <div className="mt-3 border-l-2 border-paper-line pl-5">
-          {inv.timeline.map((t, i) => (
-            <div key={i} className="relative mb-4 pb-1">
-              <span className="absolute -left-[26px] top-1 h-2.5 w-2.5 rounded-full bg-stamp" />
-              <div className="font-mono text-[11px] text-slate-400">
-                {new Date(t.timestamp).toLocaleString()}
-              </div>
-              <div className="text-[13px] text-ink">{t.description}</div>
-            </div>
-          ))}
         </div>
       </div>
     </div>

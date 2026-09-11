@@ -1,86 +1,156 @@
 import { useEffect, useState } from 'react';
 import StatCard from '../components/StatCard';
-import { fetchStats } from '../api/client';
-import type { DashboardStats } from '../types';
-
-const PIPELINE = ['Ingestion', 'Normalize', 'Graph Build', 'Features', 'Anomaly Engine', 'Investigate'];
+import {
+  fetchDataset,
+  triggerAnalysis,
+  fetchJobStatus,
+  fetchAnalysisStats,
+  getStoredJobId,
+} from '../api/client';
+import type { Dataset, AnalysisJob, AnalysisStats } from '../types';
 
 export default function DashboardHome() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [dataset, setDataset] = useState<Dataset | null>(null);
+  const [job, setJob] = useState<AnalysisJob | null>(null);
+  const [stats, setStats] = useState<AnalysisStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetchStats()
-      .then((s) => !cancelled && setStats(s))
-      .catch(() => !cancelled && setError('Could not reach the analysis backend.'));
+
+    async function load() {
+      try {
+        const ds = await fetchDataset();
+        if (cancelled) return;
+        setDataset(ds);
+
+        const storedJobId = getStoredJobId();
+        if (storedJobId) {
+          const j = await fetchJobStatus(storedJobId);
+          if (cancelled) return;
+          setJob(j);
+          if (j.status === 'done') {
+            const s = await fetchAnalysisStats(storedJobId);
+            if (!cancelled) setStats(s);
+          }
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e.message);
+      }
+    }
+
+    load();
     return () => {
       cancelled = true;
     };
   }, []);
 
+  async function handleRunAnalysis() {
+    setError(null);
+    try {
+      const newJob = await triggerAnalysis();
+      setJob(newJob);
+      pollJob(newJob.job_id);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  function pollJob(jobId: string) {
+    const interval = setInterval(async () => {
+      try {
+        const j = await fetchJobStatus(jobId);
+        setJob(j);
+        if (j.status === 'done' || j.status === 'failed') {
+          clearInterval(interval);
+          if (j.status === 'done') {
+            const s = await fetchAnalysisStats(jobId);
+            setStats(s);
+          }
+        }
+      } catch (e: any) {
+        clearInterval(interval);
+        setError(e.message);
+      }
+    }, 2000);
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-10 py-10">
       <h1 className="font-serif text-[26px] font-semibold text-ink">Case Overview</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Current state of the ingested dataset and detection run.
+        Dataset <span className="font-mono">{dataset?.dataset_id ?? '—'}</span> · Status{' '}
+        <span className="font-mono">{dataset?.status ?? '—'}</span>
       </p>
-
-      {/* Pipeline strip — mirrors the technical architecture slide exactly */}
-      <div className="mt-8 flex items-center gap-1 rounded-sm border border-paper-line bg-ink px-5 py-4 text-white">
-        {PIPELINE.map((stage, i) => (
-          <div key={stage} className="flex items-center">
-            <span className="whitespace-nowrap text-[12px] font-medium text-slate-200">{stage}</span>
-            {i < PIPELINE.length - 1 && <span className="mx-3 text-slate-500">→</span>}
-          </div>
-        ))}
-      </div>
 
       {error && (
         <div className="mt-6 rounded-sm border border-risk-high bg-risk-highSoft px-4 py-3 text-sm text-risk-high">
-          {error} Showing last known state.
+          {error}
         </div>
       )}
 
-      {stats && (
-        <>
-          <div className="mt-10 grid grid-cols-4 gap-8">
-            <StatCard label="Transactions" value={stats.totalTransactions.toLocaleString()} />
-            <StatCard label="Wallets" value={stats.totalWallets.toLocaleString()} />
-            <StatCard label="IP Observations" value={stats.totalIps.toLocaleString()} />
-            <StatCard label="High-Risk Alerts" value={stats.highRiskAlerts} flagged />
-          </div>
-
-          <div className="mt-10 grid grid-cols-3 gap-8">
-            <StatCard label="Flagged Transactions" value={stats.suspiciousTransactions} flagged />
-            <StatCard label="Flagged Wallets" value={stats.suspiciousWallets} flagged />
-            <StatCard label="Suspicious Clusters" value={stats.suspiciousClusters} flagged />
-          </div>
-
-          <div className="mt-12">
-            <h2 className="text-[12.5px] font-medium text-slate-500">Geographic Distribution</h2>
-            <div className="mt-3 space-y-2">
-              {stats.countryDistribution.map((row) => {
-                const max = Math.max(...stats.countryDistribution.map((r) => r.count));
-                return (
-                  <div key={row.country} className="flex items-center gap-3">
-                    <span className="w-8 font-mono text-xs text-slate-500">{row.country}</span>
-                    <div className="h-2 flex-1 rounded-sm bg-paper-line">
-                      <div
-                        className="h-2 rounded-sm bg-ink-soft"
-                        style={{ width: `${(row.count / max) * 100}%` }}
-                      />
-                    </div>
-                    <span className="w-12 text-right font-mono text-xs text-slate-500">{row.count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </>
+      {/* Ingestion-level stats — always available once dataset exists */}
+      {dataset && (
+        <div className="mt-8 grid grid-cols-4 gap-8">
+          <StatCard label="Transactions" value={dataset.stats.transactions.toLocaleString()} />
+          <StatCard label="Wallets" value={dataset.stats.wallets.toLocaleString()} />
+          <StatCard label="Unique IPs" value={dataset.stats.unique_ips.toLocaleString()} />
+          <StatCard label="Countries" value={dataset.stats.unique_countries} />
+        </div>
       )}
 
-      {!stats && !error && <p className="mt-10 text-sm text-slate-400">Loading case data…</p>}
+      {/* Analysis pipeline status */}
+      <div className="mt-10 rounded-sm border border-paper-line bg-white p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[12.5px] font-medium text-slate-500">Detection Pipeline</div>
+            {job ? (
+              <div className="mt-1 text-sm text-ink">
+                Status: <span className="font-mono">{job.status}</span>
+                {job.current_stage && (
+                  <span className="ml-2 text-slate-500">— currently: {job.current_stage}</span>
+                )}
+              </div>
+            ) : (
+              <div className="mt-1 text-sm text-slate-400">No analysis run yet for this dataset.</div>
+            )}
+          </div>
+          <button
+            onClick={handleRunAnalysis}
+            disabled={job?.status === 'running'}
+            className="rounded-sm bg-stamp px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          >
+            {job?.status === 'running' ? 'Running…' : 'Run Analysis'}
+          </button>
+        </div>
+
+        {job && job.stages_completed && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {job.stages_completed.map((s) => (
+              <span key={s} className="rounded-sm bg-risk-lowSoft px-2 py-1 text-[11px] text-risk-low">
+                {s} ✓
+              </span>
+            ))}
+            {job.stages_remaining?.map((s) => (
+              <span key={s} className="rounded-sm bg-paper px-2 py-1 text-[11px] text-slate-400">
+                {s}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Detection results — only once the job is done */}
+      {stats && (
+        <div className="mt-10 grid grid-cols-3 gap-8">
+          <StatCard label="Alerts Generated" value={stats.stats.alerts_generated} flagged />
+          <StatCard label="Critical Alerts" value={stats.stats.critical_alerts} flagged />
+          <StatCard label="Peeling Chains Found" value={stats.stats.peeling_chains_detected} flagged />
+          <StatCard label="Coinjoin-like Patterns" value={stats.stats.coinjoin_like_detected} />
+          <StatCard label="Entity Clusters" value={stats.stats.entity_clusters} />
+          <StatCard label="Anomalies Detected" value={stats.stats.anomalies_detected} />
+        </div>
+      )}
     </div>
   );
 }

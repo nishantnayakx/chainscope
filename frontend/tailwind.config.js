@@ -22,6 +22,8 @@ export default {
           soft: '#F3E4D6',
         },
         risk: {
+          critical: '#7A1611',
+          criticalSoft: '#F1DAD8',
           high: '#A3311A',
           highSoft: '#F6E2DD',
           medium: '#8A6A17',
