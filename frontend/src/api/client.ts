@@ -37,12 +37,93 @@ import {
 export const API_BASE = 'http://localhost:8000/api/v1';
 export let USE_MOCK = true;
 
+// Connection state tracking
+export type ConnectionStatus = 'connected' | 'disconnected' | 'checking';
+let connectionStatus: ConnectionStatus = 'disconnected';
+let connectionListeners: ((status: ConnectionStatus) => void)[] = [];
+
+export function onConnectionChange(listener: (status: ConnectionStatus) => void) {
+  connectionListeners.push(listener);
+  return () => {
+    connectionListeners = connectionListeners.filter((l) => l !== listener);
+  };
+}
+
+function setConnectionStatus(status: ConnectionStatus) {
+  connectionStatus = status;
+  connectionListeners.forEach((l) => l(status));
+}
+
+export function getConnectionStatus(): ConnectionStatus {
+  return connectionStatus;
+}
+
 export function setUseMock(val: boolean) {
   USE_MOCK = val;
+  if (!val) {
+    checkBackendHealth();
+  } else {
+    setConnectionStatus('disconnected');
+  }
+}
+
+// Health check with timeout
+export async function checkBackendHealth(): Promise<boolean> {
+  setConnectionStatus('checking');
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(`${API_BASE}/../schema/`, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      setConnectionStatus('connected');
+      return true;
+    }
+    setConnectionStatus('disconnected');
+    return false;
+  } catch {
+    setConnectionStatus('disconnected');
+    return false;
+  }
 }
 
 function delay<T>(value: T, ms = 250): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+}
+
+// Resilient fetch wrapper with timeout and error handling
+async function resilientFetch<T>(url: string, options?: RequestInit): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      throw new Error(`API Error: ${res.status} ${res.statusText}`);
+    }
+
+    setConnectionStatus('connected');
+    return res.json();
+  } catch (err: any) {
+    clearTimeout(timeout);
+
+    if (err.name === 'AbortError') {
+      setConnectionStatus('disconnected');
+      throw new Error('Request timed out — backend may not be running');
+    }
+
+    if (err.message?.includes('fetch') || err.message?.includes('NetworkError') || err.message?.includes('Failed')) {
+      setConnectionStatus('disconnected');
+      throw new Error('Cannot connect to backend at ' + API_BASE);
+    }
+
+    throw err;
+  }
 }
 
 // 1. Datasets API
@@ -59,17 +140,15 @@ export async function importDataset(file: File, datasetId?: string): Promise<Dat
   formData.append('file', file);
   if (datasetId) formData.append('dataset_id', datasetId);
 
-  const res = await fetch(`${API_BASE}/datasets/import/`, {
+  return resilientFetch(`${API_BASE}/datasets/import/`, {
     method: 'POST',
     body: formData,
   });
-  return res.json();
 }
 
 export async function fetchDatasetDetail(datasetId = 'demo_01'): Promise<DatasetDetail> {
   if (USE_MOCK) return delay(mockDatasetDetail);
-  const res = await fetch(`${API_BASE}/datasets/${datasetId}/`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/datasets/${datasetId}/`);
 }
 
 // 2. Transactions API
@@ -82,14 +161,12 @@ export async function fetchTransactions(params?: {
 }): Promise<PaginatedResponse<TransactionListItem>> {
   if (USE_MOCK) return delay(mockTransactions);
   const query = new URLSearchParams(params as any).toString();
-  const res = await fetch(`${API_BASE}/transactions/?${query}`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/transactions/?${query}`);
 }
 
 export async function fetchTransactionDetail(txid: string): Promise<TransactionDetail> {
   if (USE_MOCK) return delay({ ...mockTransactionDetail, txid });
-  const res = await fetch(`${API_BASE}/transactions/${txid}/`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/transactions/${txid}/`);
 }
 
 // 3. Wallets API
@@ -103,21 +180,18 @@ export async function fetchWallets(params?: {
 }): Promise<PaginatedResponse<WalletListItem>> {
   if (USE_MOCK) return delay(mockWallets);
   const query = new URLSearchParams(params as any).toString();
-  const res = await fetch(`${API_BASE}/wallets/?${query}`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/wallets/?${query}`);
 }
 
 export async function fetchWalletRisk(address: string): Promise<WalletRiskBreakdown> {
   if (USE_MOCK) return delay({ ...mockWalletRiskBreakdown, address });
-  const res = await fetch(`${API_BASE}/wallets/${address}/risk/`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/wallets/${address}/risk/`);
 }
 
 // 4. Graph API
 export async function fetchGraphNeighborhood(address: string, depth = 2): Promise<GraphResponse> {
   if (USE_MOCK) return delay(mockGraphResponse);
-  const res = await fetch(`${API_BASE}/graph/neighborhood/?address=${encodeURIComponent(address)}&depth=${depth}`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/graph/neighborhood/?address=${encodeURIComponent(address)}&depth=${depth}`);
 }
 
 export async function fetchShortestPath(fromAddr: string, toAddr: string): Promise<ShortestPathResponse> {
@@ -128,8 +202,7 @@ export async function fetchShortestPath(fromAddr: string, toAddr: string): Promi
       graph: mockGraphResponse,
     });
   }
-  const res = await fetch(`${API_BASE}/graph/shortest-path/?from=${encodeURIComponent(fromAddr)}&to=${encodeURIComponent(toAddr)}`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/graph/shortest-path/?from=${encodeURIComponent(fromAddr)}&to=${encodeURIComponent(toAddr)}`);
 }
 
 // 5. Alerts & Evidence API
@@ -140,53 +213,45 @@ export async function fetchAlerts(params?: {
 }): Promise<PaginatedResponse<AlertItem>> {
   if (USE_MOCK) return delay(mockAlerts);
   const query = new URLSearchParams(params as any).toString();
-  const res = await fetch(`${API_BASE}/alerts/?${query}`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/alerts/?${query}`);
 }
 
 export async function fetchAlertEvidence(alertId: string): Promise<AlertEvidenceResponse> {
   if (USE_MOCK) return delay({ ...mockAlertEvidence, alert_id: alertId });
-  const res = await fetch(`${API_BASE}/alerts/${alertId}/evidence/`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/alerts/${alertId}/evidence/`);
 }
 
 export async function fetchAlertPropagation(alertId: string): Promise<AlertPropagationResponse> {
   if (USE_MOCK) return delay({ ...mockAlertPropagation, alert_id: alertId });
-  const res = await fetch(`${API_BASE}/alerts/${alertId}/propagation/`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/alerts/${alertId}/propagation/`);
 }
 
 // 6. Analysis Pipeline API
 export async function triggerAnalysis(datasetId = 'demo_01'): Promise<AnalysisJob> {
   if (USE_MOCK) return delay(mockAnalysisJob);
-  const res = await fetch(`${API_BASE}/analysis/`, {
+  return resilientFetch(`${API_BASE}/analysis/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ dataset_id: datasetId }),
   });
-  return res.json();
 }
 
 export async function fetchAnalysisJob(jobId: string): Promise<AnalysisJob> {
   if (USE_MOCK) return delay({ ...mockAnalysisJob, job_id: jobId });
-  const res = await fetch(`${API_BASE}/analysis/${jobId}/`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/analysis/${jobId}/`);
 }
 
 export async function fetchAnalysisStats(jobId: string): Promise<AnalysisStats> {
   if (USE_MOCK) return delay({ ...mockAnalysisStats, job_id: jobId });
-  const res = await fetch(`${API_BASE}/analysis/${jobId}/stats/`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/analysis/${jobId}/stats/`);
 }
 
 export async function fetchClusters(): Promise<ClusterInfo[]> {
   if (USE_MOCK) return delay(mockClusters);
-  const res = await fetch(`${API_BASE}/clusters/`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/clusters/`);
 }
 
 export async function fetchStreamSample(): Promise<StreamTransaction[]> {
   if (USE_MOCK) return delay(mockStreamTransactions);
-  const res = await fetch(`${API_BASE}/stream/latest/`);
-  return res.json();
+  return resilientFetch(`${API_BASE}/stream/latest/`);
 }

@@ -4,30 +4,26 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: {
-          DEFAULT: '#0F1A2E',
-          soft: '#1C2C47',
-        },
-        paper: {
-          DEFAULT: '#FFFFFF',
-          dim: '#F3F5F8',
-        },
-        accent: {
-          DEFAULT: '#0E7490',
-          soft: '#E4F3F6',
-        },
-        risk: {
-          high: '#B4390A',
-          highSoft: '#FBEAE3',
-          medium: '#B7791F',
-          mediumSoft: '#FBF2E3',
-          low: '#2F7A4F',
-          lowSoft: '#E7F5EC',
+        netra: {
+          bg: '#060b18',
+          surface: '#0c1425',
+          'surface-2': '#111d33',
+          border: '#1a2744',
+          'border-light': '#243352',
+          accent: '#00d4ff',
+          'accent-dim': '#0891b2',
+          danger: '#ef4444',
+          'danger-dim': '#991b1b',
+          warning: '#f59e0b',
+          success: '#22c55e',
         },
       },
       fontFamily: {
-        mono: ['ui-monospace', 'SF Mono', 'Roboto Mono', 'monospace'],
-        serif: ['Georgia', 'Times New Roman', 'serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'SF Mono', 'Roboto Mono', 'monospace'],
+      },
+      animation: {
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
     },
   },

@@ -1,10 +1,16 @@
-import { USE_MOCK, setUseMock } from '../api/client';
-import { useState } from 'react';
+import { USE_MOCK, setUseMock, onConnectionChange, getConnectionStatus, type ConnectionStatus } from '../api/client';
+import { useState, useEffect } from 'react';
+import { LayoutDashboard, Database, Zap, Wallet, GitBranch, ShieldAlert, Radio, Layers, Eye } from 'lucide-react';
 
-export type Page = 'dashboard' | 'datasets' | 'transactions' | 'wallets' | 'graph' | 'alerts';
+export type Page = 'dashboard' | 'datasets' | 'transactions' | 'wallets' | 'graph' | 'alerts' | 'stream' | 'clusters';
 
 export default function Sidebar({ page, onNavigate }: { page: Page; onNavigate: (p: Page) => void }) {
   const [isMocking, setIsMocking] = useState(USE_MOCK);
+  const [connStatus, setConnStatus] = useState<ConnectionStatus>(getConnectionStatus());
+
+  useEffect(() => {
+    return onConnectionChange(setConnStatus);
+  }, []);
 
   const toggleMock = () => {
     const next = !isMocking;
@@ -12,57 +18,67 @@ export default function Sidebar({ page, onNavigate }: { page: Page; onNavigate: 
     setUseMock(next);
   };
 
-  const items: { id: Page; label: string; icon: string; badge?: string }[] = [
-    { id: 'dashboard', label: 'Command Overview', icon: '📊' },
-    { id: 'datasets', label: 'Datasets & Pipeline', icon: '📂', badge: 'v1.0' },
-    { id: 'transactions', label: 'Transactions Explorer', icon: '⚡' },
-    { id: 'wallets', label: 'Wallet Risk Profiles', icon: '👛' },
-    { id: 'graph', label: 'Graph Neighborhood', icon: '🕸️' },
-    { id: 'alerts', label: 'Alerts & Explainability', icon: '🚨', badge: '47 Active' },
+  const items: { id: Page; label: string; icon: React.ReactNode; badge?: string }[] = [
+    { id: 'dashboard', label: 'Command Center', icon: <LayoutDashboard className="h-4 w-4" /> },
+    { id: 'datasets', label: 'Datasets & Pipeline', icon: <Database className="h-4 w-4" /> },
+    { id: 'transactions', label: 'Transaction Explorer', icon: <Zap className="h-4 w-4" /> },
+    { id: 'wallets', label: 'Wallet Risk Profiles', icon: <Wallet className="h-4 w-4" /> },
+    { id: 'graph', label: 'Graph Explorer', icon: <GitBranch className="h-4 w-4" /> },
+    { id: 'alerts', label: 'Alerts & Evidence', icon: <ShieldAlert className="h-4 w-4" />, badge: '47' },
+    { id: 'stream', label: 'Live Stream', icon: <Radio className="h-4 w-4" /> },
+    { id: 'clusters', label: 'Risk Clusters', icon: <Layers className="h-4 w-4" /> },
   ];
 
   return (
-    <aside className="flex w-64 flex-shrink-0 flex-col bg-slate-900 text-slate-200 border-r border-slate-800 select-none">
+    <aside className="flex w-72 flex-shrink-0 flex-col bg-[var(--netra-surface)] border-r border-[var(--netra-border)] select-none">
       {/* Brand Header */}
-      <div className="border-b border-slate-800 px-5 py-5 flex items-center gap-3">
-        <div className="h-9 w-9 rounded-lg bg-cyan-600 flex items-center justify-center font-bold text-white shadow-lg shadow-cyan-900/50 text-lg">
-          ⛓️
+      <div className="px-5 py-5 flex items-center gap-3.5">
+        <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg netra-glow-cyan"
+          style={{
+            background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+          }}
+        >
+          <Eye className="h-5 w-5 text-white" />
         </div>
         <div>
-          <div className="font-serif text-lg font-bold text-white tracking-wide flex items-center gap-1.5">
-            ChainScope <span className="text-[10px] font-mono font-semibold bg-cyan-950 text-cyan-400 px-1.5 py-0.5 rounded border border-cyan-800">REST v1</span>
+          <div className="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
+            NETRA
+            <span className="text-[9px] font-mono font-semibold bg-[var(--netra-accent-glow)] text-[var(--netra-accent)] px-1.5 py-0.5 rounded border border-[var(--netra-accent)]/20">
+              v1.0
+            </span>
           </div>
-          <div className="font-mono text-[11px] text-slate-400">NTRO SIH 2026 · OpenAPI Spec</div>
+          <div className="font-mono text-[10px] text-[var(--netra-text-muted)] leading-tight mt-0.5">
+            Network Entity Tracking<br />& Risk Analysis
+          </div>
         </div>
       </div>
 
+      {/* Accent Bar */}
+      <div className="h-[1px] mx-4" style={{ background: 'linear-gradient(90deg, transparent, var(--netra-accent), transparent)' }} />
+
       {/* Nav Menu */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        <div className="px-3 pb-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-500">
-          API v1 Master Modules
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        <div className="px-3 pb-2.5 pt-1 text-[9px] font-mono font-bold uppercase tracking-widest text-[var(--netra-text-muted)]">
+          Investigation Modules
         </div>
         {items.map((item) => (
           <button
             key={item.id}
             onClick={() => onNavigate(item.id)}
-            className={`w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all flex items-center justify-between group ${
+            className={`w-full rounded-lg px-3 py-2.5 text-left text-[13px] font-medium transition-all flex items-center justify-between group ${
               page === item.id
-                ? 'bg-cyan-600/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                ? 'bg-[var(--netra-accent-glow)] text-[var(--netra-accent)] shadow-sm'
+                : 'text-[var(--netra-text-muted)] hover:bg-white/[0.03] hover:text-[var(--netra-text)]'
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <span className="text-base group-hover:scale-110 transition-transform">{item.icon}</span>
+              <span className={`transition-colors ${page === item.id ? 'text-[var(--netra-accent)]' : 'text-[var(--netra-text-muted)] group-hover:text-[var(--netra-text)]'}`}>
+                {item.icon}
+              </span>
               <span>{item.label}</span>
             </div>
             {item.badge && (
-              <span
-                className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold ${
-                  item.badge === 'v1.0'
-                    ? 'bg-cyan-950 text-cyan-400 border border-cyan-800'
-                    : 'bg-rose-950 text-rose-400 border border-rose-800'
-                }`}
-              >
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold bg-red-500/15 text-red-400 border border-red-500/20 min-w-[20px] text-center">
                 {item.badge}
               </span>
             )}
@@ -71,22 +87,39 @@ export default function Sidebar({ page, onNavigate }: { page: Page; onNavigate: 
       </nav>
 
       {/* API Endpoint Mode Toggle */}
-      <div className="border-t border-slate-800 p-4 bg-slate-950/80 space-y-3">
+      <div className="border-t border-[var(--netra-border)] p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-mono text-slate-400">API Endpoint Source:</span>
+          <span className="text-[10px] font-mono text-[var(--netra-text-muted)]">Data Source</span>
           <button
             onClick={toggleMock}
-            className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-colors border ${
+            className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all border ${
               isMocking
-                ? 'bg-amber-950 text-amber-400 border-amber-800'
-                : 'bg-emerald-950 text-emerald-400 border-emerald-800'
+                ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
+                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
             }`}
           >
-            {isMocking ? 'Client Mock Mode' : 'Live FastAPI Mode'}
+            {isMocking ? 'Mock Mode' : 'Live API'}
           </button>
         </div>
-        <div className="text-[10px] font-mono text-slate-500 truncate" title="http://localhost:8000/api/v1/">
-          Base: http://localhost:8000/api/v1/
+
+        {/* Connection Status */}
+        {!isMocking && (
+          <div className="flex items-center gap-2 animate-netra-fade-in">
+            <span className={`h-2 w-2 rounded-full ${
+              connStatus === 'connected' ? 'bg-emerald-400 animate-netra-pulse'
+                : connStatus === 'checking' ? 'bg-amber-400 animate-pulse'
+                : 'bg-red-400'
+            }`} />
+            <span className="text-[10px] font-mono text-[var(--netra-text-muted)]">
+              {connStatus === 'connected' ? 'Backend Connected'
+                : connStatus === 'checking' ? 'Checking...'
+                : 'Backend Unreachable'}
+            </span>
+          </div>
+        )}
+
+        <div className="text-[9px] font-mono text-[var(--netra-text-muted)]/60 truncate" title="http://localhost:8000/api/v1/">
+          {API_BASE}
         </div>
       </div>
     </aside>
