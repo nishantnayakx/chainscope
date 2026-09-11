@@ -1,16 +1,22 @@
 import type { RiskLevel } from '../types';
 
-const styles: Record<RiskLevel, string> = {
-  CRITICAL: 'bg-red-500/15 text-red-400 border border-red-500/25',
-  HIGH: 'bg-orange-500/15 text-orange-400 border border-orange-500/25',
-  MEDIUM: 'bg-amber-500/15 text-amber-400 border border-amber-500/25',
-  LOW: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25',
+const ring: Record<RiskLevel, string> = {
+  HIGH: 'border-risk-high text-risk-high',
+  MEDIUM: 'border-risk-medium text-risk-medium',
+  LOW: 'border-risk-low text-risk-low',
 };
 
-export default function RiskBadge({ level }: { level: RiskLevel }) {
+// Deliberately not a filled pill — a stamped ring reads as "case marking"
+// rather than a generic status chip, and keeps the score legible at a glance.
+export default function RiskBadge({ level, score }: { level: RiskLevel; score?: number }) {
   return (
-    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-mono font-bold tracking-wide uppercase ${styles[level] || styles.LOW}`}>
-      {level}
+    <span className="inline-flex items-center gap-2">
+      <span
+        className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border-2 font-mono text-[11px] font-semibold ${ring[level]}`}
+      >
+        {score ?? '—'}
+      </span>
+      <span className={`text-xs font-medium tracking-wide ${ring[level].split(' ')[1]}`}>{level}</span>
     </span>
   );
 }

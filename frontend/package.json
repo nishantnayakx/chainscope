@@ -1,5 +1,5 @@
 {
-  "name": "netra-frontend",
+  "name": "chainscope-frontend",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -9,17 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "cytoscape": "^3.30.2",
-    "d3": "^7.9.0",
-    "lucide-react": "^1.41.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "cytoscape": "^3.30.2",
+    "d3": "^7.9.0"
   },
   "devDependencies": {
-    "@types/cytoscape": "^3.21.5",
-    "@types/d3": "^7.4.3",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
+    "@types/cytoscape": "^3.21.5",
+    "@types/d3": "^7.4.3",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.45",
